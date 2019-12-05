@@ -10,15 +10,17 @@ function MakeAscendingNumbers
     )
 
     $digits = $Number.ToString().ToCharArray() | % { [int]::Parse($_) }
+    $rewrite = $false
 
     for ($i = 1; $i -lt $digits.Length; $i++)
     {
         $currentDigit = $digits[$i]
         $previousDigit = $digits[$i-1]
 
-        if ($currentDigit -lt $previousDigit)
+        if ($rewrite -or ($currentDigit -lt $previousDigit))
         {
             $digits[$i] = $previousDigit
+            $rewrite = $true
         }
     }
 
@@ -39,7 +41,7 @@ $validNumbers = New-Object -TypeName System.Collections.ArrayList
 
 $biggestNumber = $range[$range.Length-1]
 
-for ($number = $range[0]; $number -le $biggestNumber; $number++)
+for ($number = (MakeAscendingNumbers -Number $range[0]); $number -le $biggestNumber; $number++)
 {
     if (($number % 10) -eq 0)
     {
