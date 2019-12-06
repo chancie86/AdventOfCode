@@ -85,6 +85,35 @@ function SetVerbNoun
     $Data
 }
 
+function GetValue
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [int[]]
+        $Program,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet(1, 2, 3)]
+        [int]
+        $ParameterNumber,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ParameterModes
+    )
+
+    $modeIndex = 3 - $ParameterNumber
+
+    if ($ParameterModes[$modeIndex] -eq "0")
+    {
+        # Position mode
+        $Program[$Program[$Ptr + $ParameterNumber]]
+    } else {
+        # Immediate mode
+        $Program[$Ptr + $ParameterNumber]
+    }
+}
+
 function Add
 {
     param (
@@ -101,23 +130,8 @@ function Add
         $ParameterModes
     )
 
-    if ($ParameterModes[2] -eq "0")
-    {
-        # Position mode
-        $param1 = $Program[$Program[$Ptr + 1]]
-    } else {
-        # Immediate mode
-        $param1 = $Program[$Ptr + 1]
-    }
-
-    if ($ParameterModes[1] -eq "0")
-    {
-        # Position mode
-        $param2 = $Program[$Program[$Ptr + 2]]
-    } else {
-        # Immediate mode
-        $param2 = $Program[$Ptr + 2]
-    }
+    $param1 = GetValue -Program $Program -ParameterModes $ParameterModes -ParameterNumber 1
+    $param2 = GetValue -Program $Program -ParameterModes $ParameterModes -ParameterNumber 2
     
     $resultPtr = $Program[$Ptr + 3]
 
@@ -143,23 +157,8 @@ function Multiply
         $ParameterModes
     )
 
-    if ($ParameterModes[2] -eq "0")
-    {
-        # Position mode
-        $param1 = $Program[$Program[$Ptr + 1]]
-    } else {
-        # Immediate mode
-        $param1 = $Program[$Ptr + 1]
-    }
-
-    if ($ParameterModes[1] -eq "0")
-    {
-        # Position mode
-        $param2 = $Program[$Program[$Ptr + 2]]
-    } else {
-        # Immediate mode
-        $param2 = $Program[$Ptr + 2]
-    }
+    $param1 = GetValue -Program $Program -ParameterModes $ParameterModes -ParameterNumber 1
+    $param2 = GetValue -Program $Program -ParameterModes $ParameterModes -ParameterNumber 2
 
     $resultPtr = $Program[$Ptr + 3]
 
@@ -178,17 +177,17 @@ function Input
 
         [Parameter(Mandatory = $true)]
         [int]
-        $Ptr
+        $Ptr,
+
+        [Parameter(Mandatory = $true)]
+        [int]
+        $Value
     )
 
     $resultPtr = $Program[$Ptr + 1]
-    #$inputText = Read-Host
-    #$input = [int]::Parse($inputText)
     
-    $input = 1
-
-    $Program[$resultPtr] = $input
-    Write-Verbose "INPUT p[$resultPtr] = $input"
+    $Program[$resultPtr] = $Value
+    Write-Verbose "INPUT p[$resultPtr] = $Value"
 
     $Program
 }
@@ -209,17 +208,109 @@ function Output
         $ParameterModes
     )
 
-    if ($ParameterModes[2] -eq "0")
-    {
-        # Position mode
-        $valuePtr = $Program[$Ptr + 1]
-    } else {
-        # Immediate mode
-        $valuePtr = $Ptr + 1
-    }
+    $param = GetValue -Program $Program -ParameterModes $ParameterModes -ParameterNumber 1
 
-    Write-Verbose "OUTPUT p[$valuePtr]"
-    Write-Host $Program[$valuePtr]
+    Write-Host $param
+
+    $Program
+}
+
+function Jump
+{
+    param (
+        [Parameter(Mandatory = $true)]
+        [int[]]
+        $Program,
+
+        [Parameter(Mandatory = $true)]
+        [int]
+        $Ptr,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ParameterModes,
+
+        [Parameter(ParameterSetName = "IfTrue")]
+        [switch]
+        $IfTrue,
+
+        [Parameter(ParameterSetName = "IfFalse")]
+        [switch]
+        $IfFalse
+    )
+
+    $param1 = GetValue -Program $Program -ParameterModes $ParameterModes -ParameterNumber 1
+    $param2 = GetValue -Program $Program -ParameterModes $ParameterModes -ParameterNumber 2
+
+    if ($IfTrue)
+    {
+        Write-Verbose "JUMP-IFTRUE $param1 == $param2"
+
+        if ($param1 -ne 0)
+        {
+            $param2
+        } else {
+            $Ptr + 3
+        }
+    } elseif ($IfFalse) {
+        Write-Verbose "JUMP-IFFALSE $param1 != $param2"
+
+        if ($param1 -eq 0)
+        {
+            $param2
+        } else {
+            $Ptr + 3
+        }
+    }
+}
+
+function SetIfSize
+{
+    param (
+        [Parameter(Mandatory = $true)]
+        [int[]]
+        $Program,
+
+        [Parameter(Mandatory = $true)]
+        [int]
+        $Ptr,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ParameterModes,
+
+        [Parameter(ParameterSetName = "LessThan")]
+        [switch]
+        $LessThan,
+
+        [Parameter(ParameterSetName = "Equals")]
+        [switch]
+        $Equals
+    )
+
+    $param1 = GetValue -Program $Program -ParameterModes $ParameterModes -ParameterNumber 1
+    $param2 = GetValue -Program $Program -ParameterModes $ParameterModes -ParameterNumber 2
+
+    $resultPtr = $Program[$Ptr + 3]
+
+    if ($LessThan)
+    {
+        Write-Verbose "SET-LESSTHAN $param1 < $param2"
+        if ($param1 -lt $param2)
+        {
+            $Program[$resultPtr] = 1
+        } else {
+            $Program[$resultPtr] = 0
+        }
+    } elseif ($Equals) {
+        Write-Verbose "SET-EQUALS $param1 == $param2"
+        if ($param1 -eq $param2)
+        {
+            $Program[$resultPtr] = 1
+        } else {
+            $Program[$resultPtr] = 0
+        }
+    }
 
     $Program
 }
@@ -229,7 +320,11 @@ function Run
     param (
         [Parameter(Mandatory = $true)]
         [int[]]
-        $Program
+        $Program,
+
+        [Parameter(Mandatory = $true)]
+        [int]
+        $InitialInput
     )
 
     $opPtr = 0
@@ -251,12 +346,26 @@ function Run
                 $opPtr += 4
             }
             3 {
-                $Program = Input -Program $Program -Ptr $opPtr
+                $Program = Input -Program $Program -Ptr $opPtr -Value $InitialInput
                 $opPtr += 2
             }
             4 {
                 $Program = Output -Program $Program -Ptr $opPtr -ParameterModes $paramMode
                 $opPtr += 2
+            }
+            5 {
+                $opPtr = Jump -Program $Program -Ptr $opPtr -ParameterModes $paramMode -IfTrue
+            }
+            6 {
+                $opPtr = Jump -Program $Program -Ptr $opPtr -ParameterModes $paramMode -IfFalse
+            }
+            7 {
+                $Program = SetIfSize -Program $Program -Ptr $opPtr -ParameterModes $paramMode -LessThan
+                $opPtr += 4
+            }
+            8 {
+                $Program = SetIfSize -Program $Program -Ptr $opPtr -ParameterModes $paramMode -Equals
+                $opPtr += 4
             }
             99 {
                 Write-Verbose "HALT"
@@ -270,4 +379,13 @@ function Run
 }
 
 Write-Host "Part 1"
-Run -Program $inputData
+# $inputText = Read-Host
+# $input = [int]::Parse($inputText)
+$input = 1
+Run -Program $inputData -InitialInput $input
+
+Write-Host "Part 2"
+# $inputText = Read-Host
+# $input = [int]::Parse($inputText)
+$input = 5
+Run -Program $inputData -InitialInput $input
