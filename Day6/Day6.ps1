@@ -20,6 +20,7 @@ function Get-Object
     else
     {
         $obj = [psobject]@{
+            Name = $Name
             Parent = $null;
             Children = new-object -TypeName "System.Collections.ArrayList";
             IsLeaf = $true;
@@ -74,6 +75,7 @@ function New-ObjectGraph
 
 function Part1
 {
+    Write-Host "Part 1"
     $sum = 0
     $objects.Values | % {
         $sum = $sum + $_.NumParents
@@ -82,7 +84,19 @@ function Part1
     $sum
 }
 
+function Part2
+{
+    Write-Host "Part 2"
+    $scriptPath = Join-Path $PSScriptRoot "dijkstras.psm1"
+    Import-Module $scriptPath -Force
+    $distance = dijkstras -InitialNodeName "YOU" -DestinationNodeName "SAN" -Nodes $script:objects.Values
+    
+    # Don't include the start and end orbits
+    $distance - 2
+}
+
 New-ObjectGraph -InputData $data
 Write-Verbose "Number of objects: $($objects.Count)"
 
 Part1
+Part2
