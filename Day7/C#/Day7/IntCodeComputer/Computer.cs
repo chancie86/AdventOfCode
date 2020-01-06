@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace chancies.adventofcode
 {
@@ -8,13 +9,15 @@ namespace chancies.adventofcode
     {
         private readonly ManualResetEvent _mre;
         private readonly ILog _log;
+        private readonly string _id;
 
         private Pipeline _inputPipeline;
         private Pipeline _outputPipeline;
 
-        public Computer(ILog logger)
+        public Computer(ILog logger, string id)
         {
             _log = logger;
+            _id = id;
             _mre = new ManualResetEvent(false);
             _inputPipeline = new Pipeline();
             _outputPipeline = new Pipeline();
@@ -22,15 +25,14 @@ namespace chancies.adventofcode
 
         public event EventHandler<int> OutputData;
 
-        public void RunAsync(int[] program)
+        public async Task RunAsync(int[] program)
         {
-            var thread = new Thread(Run);
-            thread.Start(program);
+            await Task.Run(() => Run(program));
         }
 
         public void Run(int[] program)
         {
-            _log.TraceMsg("Starting int computer");
+            TraceMsg("Starting int computer");
 
             var opPointer = 0;
 
@@ -67,15 +69,14 @@ namespace chancies.adventofcode
                         SetIfSize(program, ref opPointer, parameterModes, SetMode.Equals);
                         break;
                     case 99:
-                        _log.TraceDebug("HALT");
-                        _log.TraceMsg("int computer exiting");
+                        TraceDebug("HALT");
+                        TraceMsg("int computer exiting");
                         return;
                     default:
                         throw new InvalidOperationException($"Invalid op code {program[opPointer]}");
                 }
             }
         }
-
 
         public void AddDataToInputPipeline(params int[] data)
         {
@@ -117,7 +118,7 @@ namespace chancies.adventofcode
             var resultPointer = program[opPointer + 3];
             program[resultPointer] = param1 + param2;
 
-            _log.TraceDebug($"ADD p[{resultPointer}] = {param1} + {param2}");
+            TraceDebug($"ADD p[{resultPointer}] = {param1} + {param2}");
 
             opPointer += 4;
         }
@@ -130,7 +131,7 @@ namespace chancies.adventofcode
             var resultPointer = program[opPointer + 3];
             program[resultPointer] = param1 * param2;
 
-            _log.TraceDebug($"MULTIPLY p[{resultPointer}] = {param1} x {param2}");
+            TraceDebug($"MULTIPLY p[{resultPointer}] = {param1} x {param2}");
 
             opPointer += 4;
         }
@@ -142,7 +143,7 @@ namespace chancies.adventofcode
             var resultPointer = program[opPointer + 1];
             program[resultPointer] = value;
 
-            _log.TraceDebug($"INPUT p[{resultPointer}] = {value}");
+            TraceDebug($"INPUT p[{resultPointer}] = {value}");
 
             opPointer += 2;
         }
@@ -168,7 +169,7 @@ namespace chancies.adventofcode
         {
             var result = GetValue(program, opPointer, 1, parameterModes);
 
-            _log.TraceDebug($"OUTPUT {result}");
+            TraceDebug($"OUTPUT {result}");
 
             _outputPipeline.Write(result);
 
@@ -185,7 +186,7 @@ namespace chancies.adventofcode
             switch (mode)
             {
                 case JumpMode.JumpIfTrue:
-                    _log.TraceDebug($"JUMP-IFTRUE {param1} == {param2}");
+                    TraceDebug($"JUMP-IFTRUE {param1} == {param2}");
 
                     if (param1 != 0)
                     {
@@ -197,7 +198,7 @@ namespace chancies.adventofcode
                     }
                     break;
                 case JumpMode.JumpIfFalse:
-                    _log.TraceDebug($"JUMP-IFFALSE{param1} != {param2}");
+                    TraceDebug($"JUMP-IFFALSE{param1} != {param2}");
                     if (param1 == 0)
                     {
                         opPointer = param2;
@@ -220,7 +221,7 @@ namespace chancies.adventofcode
             switch (mode)
             {
                 case SetMode.LessThan:
-                    _log.TraceDebug($"SET-LESSTHAN {param1} < {param2}");
+                    TraceDebug($"SET-LESSTHAN {param1} < {param2}");
                     if (param1 < param2)
                     {
                         program[resultPointer] = 1;
@@ -231,7 +232,7 @@ namespace chancies.adventofcode
                     }
                     break;
                 case SetMode.Equals:
-                    _log.TraceDebug($"SET-EQUALS {param1} == {param2}");
+                    TraceDebug($"SET-EQUALS {param1} == {param2}");
                     if (param1 == param2)
                     {
                         program[resultPointer] = 1;
@@ -251,6 +252,16 @@ namespace chancies.adventofcode
             _mre?.Dispose();
             _inputPipeline?.Dispose();
             _outputPipeline?.Dispose();
+        }
+
+        private void TraceDebug(string msg, params object[] args)
+        {
+            _log.TraceDebug($"COMPUTER {_id}: {msg}", args);
+        }
+
+        private void TraceMsg(string msg, params object[] args)
+        {
+            _log.TraceMsg($"COMPUTER {_id}: {msg}", args);
         }
 
         private enum JumpMode
