@@ -11,16 +11,24 @@ namespace Day8
 
         public Layer(int[] data, int width, int height)
         {
+            if (data.Length != width * height)
+            {
+                throw new ArgumentException($"data buffer is the wrong size. Expected {width * height} but was {data.Length}");
+            }
+
             _data = data;
             Width = width;
             Height = height;
+            ReadOnly = true;
         }
 
         public int Width { get; }
 
         public int Height { get; }
 
-        public static Layer Parse(string rawData, int startIndex, int width, int height)
+        public bool ReadOnly { get; set; }
+
+        private static Layer Parse(string rawData, int startIndex, int width, int height)
         {
             var numPixels = width * height;
 
@@ -39,6 +47,40 @@ namespace Day8
             return new Layer(data, width, height);
         }
 
+        public static IList<Layer> Parse(string data, int width, int height)
+        {
+            int numPixels = width * height;
+
+            int currentIndex = 0;
+            var layers = new List<Layer>();
+
+            while (currentIndex < data.Length)
+            {
+                layers.Add(Parse(data, currentIndex, width, height));
+                currentIndex += numPixels;
+            }
+
+            return layers;
+        }
+
+        public static Layer CreateTransparentLayer(int width, int height)
+        {
+            var layer = new Layer(new int[width * height], width, height)
+            {
+                ReadOnly = false
+            };
+
+            for (var y = 0; y < height; y++)
+            {
+                for (var x = 0; x < width; x++)
+                {
+                    layer.SetPixel(x, y, Constants.Transparent);
+                }
+            }
+
+            return layer;
+        }
+
         public int GetPixel(int x, int y)
         {
             if (x >= Width)
@@ -52,6 +94,16 @@ namespace Day8
             }
 
             return _data[y * Width + x];
+        }
+
+        public void SetPixel(int x, int y, int value)
+        {
+            if (ReadOnly)
+            {
+                throw new InvalidOperationException("Cannot write to layer because it is readonly");
+            }
+
+            _data[y * Width + x] = value;
         }
     }
 }
