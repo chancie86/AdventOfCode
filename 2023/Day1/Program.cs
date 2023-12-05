@@ -1,7 +1,6 @@
 ﻿var lines = await File.ReadAllLinesAsync("input.txt");
 
 // Part 1
-
 var part1CalibrationValues = GetCalibrationValues(lines, true);
 Console.WriteLine($"Part 1: {part1CalibrationValues.Sum()}");
 
