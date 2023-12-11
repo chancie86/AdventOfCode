@@ -38,7 +38,7 @@
 
         private static PartNumber ExtractNumber(string text, int startIndex)
         {
-            var endIndex = startIndex + 1;
+            int endIndex;
 
             for (endIndex = startIndex + 1; endIndex < text.Length;)
             {

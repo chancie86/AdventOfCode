@@ -4,11 +4,9 @@
 var part1CalibrationValues = GetCalibrationValues(lines, true);
 Console.WriteLine($"Part 1: {part1CalibrationValues.Sum()}");
 
-
 // Part 2
 var part2CalibrationValues = GetCalibrationValues(lines, false);
 Console.WriteLine($"Part 2: {part2CalibrationValues.Sum()}");
-
 
 public static partial class Program
 {
