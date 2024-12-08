@@ -57,5 +57,23 @@
 
             return true;
         }
+
+        public static bool ConvolutionFilter(this WordSearch self, int x, int y)
+        {
+            var patterns = new [] { "MAS", "SAM" };
+
+            if (self[x, y] != 'A')
+            {
+                return false;
+            }
+
+            if (patterns.Any(p => self.Match(x - 1, y - 1, p, Direction.SouthEast))
+                && patterns.Any(p => self.Match(x + 1, y - 1, p, Direction.SouthWest)))
+            {
+                return true;
+            }
+
+            return false;
+        }
     }
 }

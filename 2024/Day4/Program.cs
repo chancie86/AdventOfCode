@@ -25,8 +25,8 @@ var input = await File.ReadAllLinesAsync(inputPath);
 
 var wordSearch = new WordSearch(input);
 
-Part1(wordSearch);
-//Part2(input);
+//Part1(wordSearch);
+Part2(wordSearch);
 
 public partial class Program
 {
@@ -55,6 +55,20 @@ public partial class Program
 
     public static void Part2(WordSearch wordSearch)
     {
+        var result = 0;
+
+        for (var y = 0; y < wordSearch.Height; y++)
+        {
+            for (var x = 0; x < wordSearch.Width; x++)
+            {
+                if (wordSearch.ConvolutionFilter(x, y))
+                {
+                    result++;
+                }
+            }
+        }
+
+        Console.WriteLine(result);
     }
 
     private static bool Match(WordSearch wordSearch, int x, int y, char expectedChar)
