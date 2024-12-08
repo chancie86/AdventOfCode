@@ -10,5 +10,8 @@
         }
 
         public char this[int x, int y] => _input[y][x];
+
+        public int Width => _input[0].Length;
+        public int Height => _input.Length;
     }
 }

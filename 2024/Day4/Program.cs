@@ -34,35 +34,32 @@ public partial class Program
 
     public static void Part1(WordSearch wordSearch)
     {
+        var result = 0;
+
+        for (var y = 0; y < wordSearch.Height; y++)
+        {
+            for (var x = 0; x < wordSearch.Width; x++)
+            {
+                foreach (var direction in Enum.GetValues<Direction>())
+                {
+                    if (wordSearch.Match(x, y, "XMAS", direction))
+                    {
+                        result++;
+                    }
+                }
+            }
+        }
+
+        Console.WriteLine(result);
     }
 
     public static void Part2(WordSearch wordSearch)
     {
     }
 
-    private static bool Match(WordSearch wordSearch, int x, int y)
-    {
-        var searchString = "XMAS";
-
-        if (wordSearch[x, y] != searchString[0])
-        {
-            return false;
-        }
-
-        foreach (var direction in Enum.GetValues<Direction>())
-        {
-            
-        }
-    }
-
     private static bool Match(WordSearch wordSearch, int x, int y, char expectedChar)
     {
         return wordSearch[x, y] == expectedChar;
-    }
-
-    private static (int x, int y) GetNextCoordinate(int x, int y)
-    {
-        
     }
 
     private enum Mode
