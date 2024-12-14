@@ -1,8 +1,13 @@
 ﻿namespace Day6
 {
-    internal struct Position(int x, int y)
+    public struct Position(int x, int y)
     {
         public int X = x;
         public int Y = y;
+
+        public override string ToString()
+        {
+            return $"({X},{Y})";
+        }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.Drawing;
-using System.Text;
+﻿using System.Text;
 using Day6.Extensions;
 
 namespace Day6
@@ -34,13 +33,27 @@ namespace Day6
             _visited = new bool[Width, Height];
 
             var position = RefreshGuardPosition();
-            if (position == null)
-            {
-                throw new InvalidDataException("Guard is not on the _map");
-            }
 
             _currentPosition = position;
-            Visit(position.Value, GetDirection(position.Value));
+
+            if (_currentPosition.HasValue)
+            {
+                Visit(_currentPosition.Value, GetDirection(_currentPosition.Value));
+            }
+        }
+
+        private Map(char[,] data)
+        {
+            _map = data;
+            _visited = new bool[Width, Height];
+
+            var position = RefreshGuardPosition();
+
+            _currentPosition = position;
+            if (_currentPosition.HasValue)
+            {
+                Visit(_currentPosition.Value, GetDirection(_currentPosition.Value));
+            }
         }
 
         public char this[int x, int y]
@@ -52,6 +65,8 @@ namespace Day6
         public int Width => _map.GetLength(0);
         public int Height => _map.GetLength(1);
         public int VisitedCount { get; private set; }
+        public Position GuardPosition => _currentPosition.Value;
+        public Direction GuardDirection => GetDirection(_currentPosition.Value);
 
         public static async Task<Map> ReadFile(string inputPath)
         {
@@ -87,6 +102,8 @@ namespace Day6
             if (result == null)
             {
                 // Guard has left the map
+                this[_currentPosition.Value.X, _currentPosition.Value.Y] = '.';
+                _currentPosition = null;
                 return false;
             }
 
@@ -159,39 +176,37 @@ namespace Day6
         private (Position nextPosition, Direction nextDirection)? GetNextPosition()
         {
             var direction = GetDirection(_currentPosition.Value);
-            
-            // Try to head in the same direction
-            var nextPosition = Traverse(direction);
 
-            if (HasExitedMap(nextPosition))
+            do
             {
-                // Guard has left the _map
-                return null;
-            }
-
-            var nextSpaceType = GetSpaceType(nextPosition.X, nextPosition.Y);
-            if (nextSpaceType == SpaceType.Obstacle)
-            {
-                // We can't go this way. Turn right and try again.
-                direction = direction switch
-                {
-                    Direction.Up => Direction.Right,
-                    Direction.Right => Direction.Down,
-                    Direction.Down => Direction.Left,
-                    Direction.Left => Direction.Up,
-                    _ => throw new InvalidDataException($"Invalid direction '{direction}'")
-                };
-
-                nextPosition = Traverse(direction);
+                // Try to head in the same direction
+                var nextPosition = Traverse(direction);
 
                 if (HasExitedMap(nextPosition))
                 {
                     // Guard has left the _map
                     return null;
                 }
-            }
 
-            return (nextPosition, direction);
+                var nextSpaceType = GetSpaceType(nextPosition.X, nextPosition.Y);
+
+                if (nextSpaceType == SpaceType.Obstacle)
+                {
+                    // We can't go this way. Turn right and try again.
+                    direction = direction switch
+                    {
+                        Direction.Up => Direction.Right,
+                        Direction.Right => Direction.Down,
+                        Direction.Down => Direction.Left,
+                        Direction.Left => Direction.Up,
+                        _ => throw new InvalidDataException($"Invalid direction '{direction}'")
+                    };
+                }
+                else
+                {
+                    return (nextPosition, direction);
+                }
+            } while (true);
         }
 
         private Position Traverse(Direction direction)
@@ -234,6 +249,12 @@ namespace Day6
             }
 
             return sb.ToString();
+        }
+
+        public Map Copy()
+        {
+            var map = (char[,])_map.Clone();
+            return new Map(map);
         }
     }
 
