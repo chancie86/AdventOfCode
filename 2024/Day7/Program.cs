@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Day7;
+﻿using Day7;
 
 var mode = Mode.Production;
 string inputPath;
@@ -24,16 +23,18 @@ switch (mode)
 
 var equations = await ReadFile(inputPath);
 
-await Part1(equations);
-//await Part2(inputPath);
+//await Part1(equations);
+await Part2(equations);
 
 public partial class Program
 {
     private static bool Debug;
-    private static readonly char[] _operators = new[] { '+', '*' };
+
+    private static char[] Operators { get; set; }
 
     public static async Task Part1(List<Equation> equations)
     {
+        Operators = new[] { '+', '*' };
         var result = 0L;
 
         foreach (var equation in equations)
@@ -61,45 +62,78 @@ public partial class Program
 
     public static async Task Part2(List<Equation> equations)
     {
+        Operators = new[] { '+', '*', '|' };
+        var result = 0L;
 
+        foreach (var equation in equations)
+        {
+            var validEquations = new List<string>();
+
+            FindValidOperations(validEquations, equation);
+
+            if (validEquations.Any())
+            {
+                result += equation.TestValue;
+            }
+
+            if (Debug)
+            {
+                foreach (var validEquation in validEquations)
+                {
+                    Console.WriteLine($"{string.Join("", validEquation)} = {equation.TestValue}");
+                }
+            }
+        }
+
+        Console.WriteLine(result);
     }
 
     private static void FindValidOperations(List<string> results, Equation equation)
     {
         Span<long> span = equation.Numbers.ToArray();
         var currentValue = span[0];
-        var steps = new StringBuilder($"{span[0]}");
+        var steps = new List<string>
+        {
+            $"{span[0]}"
+        };
 
         FindValidOperations(results, equation.TestValue, currentValue, span.Slice(1), steps);
     }
 
-    private static void FindValidOperations(List<string> results, long expectedResult, long currentValue, Span<long> span, StringBuilder steps)
+    private static void FindValidOperations(List<string> results, long expectedResult, long currentValue, Span<long> span, List<string> steps)
     {
         if (span.IsEmpty)
         {
             if (expectedResult == currentValue)
             {
-                results.Add(steps.ToString());
+                results.Add(string.Join("", steps));
             }
 
             return;
         }
 
-        foreach (var op in _operators)
+        foreach (var op in Operators)
         {
-            var newSteps = new StringBuilder(steps.ToString());
+            var newSteps = new List<string>(steps);
             long nextValue;
-
-            newSteps.Append(op);
-            newSteps.Append(span[0]);
 
             switch (op)
             {
                 case '*':
+                    newSteps.Add(op.ToString());
+                    newSteps.Add(span[0].ToString());
                     nextValue = currentValue * span[0];
                     break;
                 case '+':
+                    newSteps.Add(op.ToString());
+                    newSteps.Add(span[0].ToString());
                     nextValue = currentValue + span[0];
+                    break;
+                case '|':
+                    // Replace the last element with a concatenation of the last value and the current one
+                    currentValue = long.Parse($"{currentValue}{span[0]}");
+                    newSteps.Add(span[0].ToString());
+                    nextValue = currentValue;
                     break;
                 default:
                     throw new InvalidOperationException();
